@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  userId          String   @id @unique @db.Char(5)
+  namaKaryawan    String   @db.VarChar(50)
+  password        String   @db.VarChar(50)
+  posisiJabatanId String   @db.Char(4)
+  subUnitId       String   @db.Char(4)
+  posisiJabatan   Position @relation(fields: [posisiJabatanId], references: [posisiJabatanId])
+  subUnit         SubUnit  @relation(fields: [subUnitId], references: [subUnitId])
+  ToDoActivities  ToDoActivity[]
+  TodayActivities TodayActivity[]
+
+  @@map("users")
+}
+
+model Position {
+  posisiJabatanId   String @id @unique @db.Char(4)
+  namaPosisiJabatan String @db.VarChar(50)
+  users             User[]
+
+  @@map("positions")
+}
+
+model SubUnit {
+  subUnitId   String @id @unique @db.Char(4)
+  namaSubUnit String @db.VarChar(50)
+  users       User[]
+
+  @@map("subunits")
+}
+
+model ToDoActivity {
+  toDoActivityId       String         @id @unique @db.VarChar(5)
+  userId               String
+  parentActivityId     String?        @db.Char(5)
+  deskripsi            String         @db.VarChar(500)
+  unitCross            String?        @db.VarChar(50)
+  status               String         @db.VarChar(15)
+  approvalStatus       String         @db.VarChar(20)
+  tanggalMulai         DateTime
+  tanggalSelesai       DateTime?
+  tanggalDibuat        DateTime       @default(now())
+  definisiToDoSelesai  String         @db.VarChar(500)
+  parentActivity       ToDoActivity?  @relation("ParentActivity", fields: [parentActivityId], references: [toDoActivityId])
+  subActivities        ToDoActivity[] @relation("ParentActivity")
+  user                 User           @relation(fields: [userId], references: [userId])
+  todayActivities      TodayActivity[]
+
+  @@map("todo_activities")
+}
+
+model TodayActivity {
+  todayActivityId      String      @id @unique @db.Char(5)
+  deskripsi            String      @db.VarChar(500)
+  complexity           String      @db.VarChar(50)
+  unitCross            String?     @db.VarChar(50)
+  status               String      @db.VarChar(15)
+  tanggal              DateTime
+  jamMulai             DateTime
+  jamSelesai           DateTime?
+  userId               String
+  toDoActivityId       String
+  definisiTodaySelesai String      @db.VarChar(500)
+  user                 User        @relation(fields: [userId], references: [userId])
+  toDoActivity         ToDoActivity @relation(fields: [toDoActivityId], references: [toDoActivityId])
+
+  @@map("today_activities")
+}
